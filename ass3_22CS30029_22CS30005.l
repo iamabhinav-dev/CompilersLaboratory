@@ -60,31 +60,6 @@ COMMENT {MULTI_LINE}|{SINGLE_LINE}
 
 %%
 
-int main() {
-    int token;
-    while ((token = yylex()) != 0) {
-        switch(token) {
-            case KW:
-                printf("KEYWORD: %s\n", yytext);
-                break;
-            case ID:
-                printf("IDENTIFIER: %s\n", yytext);
-                break;
-            case CONST:
-                printf("CONSTANT: %s\n", yytext);
-                break;
-            case SL:
-                printf("STRING LITERAL: %s\n", yytext);
-                break;
-            case PUNC:
-                printf("PUNCTUATOR: %s\n", yytext);
-                break;
-            default:
-                printf("UNKNOWN TOKEN: %s\n", yytext);
-        }
-    }
-    return 0;
-}
 int yywrap(void){
     return 1;
 }
