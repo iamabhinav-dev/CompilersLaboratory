@@ -1,5 +1,4 @@
 %{
-    #include <stdio.h>
     #define KW 1
     #define ID 2
     #define CONST 3
