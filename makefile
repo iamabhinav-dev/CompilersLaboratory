@@ -1,8 +1,8 @@
 
 all: lexer
 
-lexer: lex.yy.c main.c
-	gcc   main.c
+lexer: lex.yy.c ass3_22CS30029_22CS30005.c
+	gcc   ass3_22CS30029_22CS30005.c
 
 lex.yy.c: ass3_22CS30029_22CS30005.l
 	flex ass3_22CS30029_22CS30005.l
