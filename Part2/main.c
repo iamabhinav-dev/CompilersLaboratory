@@ -44,15 +44,18 @@ void printIndent(int levels[], int level) {
 }
 
 // Function to print the tree in the specified format
-void printTree(struct Node* root, int levels[], int level) {
+void printTree(struct Node* root, int* levels, int level) {
     if (root == NULL) return;
 
-    // Print the node with the appropriate indentation
-    printIndent(levels, level);
-    if (level > 0) {
-        printf("|-");
+    // Skip printing if node data is 'E'
+    if (strcmp(root->data, "'E'") != 0) {
+        // Print the node with the appropriate indentation
+        printIndent(levels, level);
+        if (level > 0) {
+            printf("|-");
+        }
+        printf("%s\n", root->data);
     }
-    printf("%s\n", root->data);
 
     // Recursively print children and siblings
     struct Node* child = root->child;
@@ -60,6 +63,7 @@ void printTree(struct Node* root, int levels[], int level) {
         levels[level] = 1; // There are more nodes at this level
         while (child != NULL) {
             struct Node* sibling = child->sibling;
+            levels = realloc(levels, (level + 2) * sizeof(int));  // Dynamically extend the levels array as needed
             levels[level + 1] = (sibling != NULL); // Check if there are siblings at the next level
             printTree(child, levels, level + 1);
             child = sibling;
@@ -77,7 +81,14 @@ void freeTree(struct Node *node){
     free(node);
 }
 
-
+void deleteTree(struct Node* node){
+    if(node == NULL){
+        return;
+    }
+    freeTree(node->child);
+    freeTree(node->sibling);
+    free(node);
+}
 
 
 
