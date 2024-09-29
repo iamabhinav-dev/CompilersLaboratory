@@ -68,7 +68,10 @@ assignment_operator constant_expression declaration declaration_specifiers decla
 storage_class_specifier type_specifier specifier_qualifier_list type_qualifier 
 function_specifier init_declarator_list init_declarator declarator initializer
 specifier_qualifier_list_opt pointer_opt direct_declarator identifier_list_opt
-parameter_type_list type_qualifier_list_opt  type_qualifier_list
+parameter_type_list type_qualifier_list_opt  type_qualifier_list pointer parameter_list
+parameter_declaration identifier_list  designation_opt designator_list
+designator statement labeled_statement compound_statement expression_statement selection_statement 
+iteration_statement jump_statement block_item_list_opt block_item_list block_item
 
 
 primary_expression:
@@ -610,101 +613,291 @@ direct_declarator:
         $$=createNode("direct_declarator");
         insertChild($$, createNode($1));
     }
-    | LEFT_PAREN declarator RIGHT_PAREN
-    | direct_declarator LEFT_BRACKET type_qualifier_list_opt assignment_expression_opt RIGHT_BRACKET
-    | direct_declarator LEFT_BRACKET STATIC type_qualifier_list_opt assignment_expression RIGHT_BRACKET
-    | direct_declarator  LEFT_BRACKET type_qualifier_list STATIC assignment_expression RIGHT_BRACKET
-    | direct_declarator LEFT_BRACKET type_qualifier_list_opt STAR RIGHT_BRACKET
-    | direct_declarator LEFT_PAREN parameter_type_list RIGHT_PAREN
-    | direct_declarator LEFT_PAREN identifier_list_opt RIGHT_PAREN
+    | LEFT_PAREN declarator RIGHT_PAREN{
+        $$=createNode("direct_declarator");
+        insertChild($$, createNode("("));
+        insertChild($$, $2);
+        insertChild($$, createNode(")"));
+    }
+    | direct_declarator LEFT_BRACKET type_qualifier_list_opt assignment_expression_opt RIGHT_BRACKET{
+        $$=createNode("direct_declarator");
+        insertChild($$, $1);
+        insertChild($$, createNode("["));
+        insertChild($$, $3);
+        insertChild($$, $4);
+        insertChild($$, createNode("]"));
+    }
+    | direct_declarator LEFT_BRACKET STATIC type_qualifier_list_opt assignment_expression RIGHT_BRACKET{
+        $$=createNode("direct_declarator");
+        insertChild($$, $1);
+        insertChild($$, createNode("["));
+        insertChild($$, createNode("static"));
+        insertChild($$, $4);
+        insertChild($$, $5);
+        insertChild($$, createNode("]"));
+    }
+    | direct_declarator  LEFT_BRACKET type_qualifier_list STATIC assignment_expression RIGHT_BRACKET{
+        $$=createNode("direct_declarator");
+        insertChild($$, $1);
+        insertChild($$, createNode("["));
+        insertChild($$, $3);
+        insertChild($$, createNode("static"));
+        insertChild($$, $5);
+        insertChild($$, createNode("]"));
+    }
+    | direct_declarator LEFT_BRACKET type_qualifier_list_opt STAR RIGHT_BRACKET{
+        $$=createNode("direct_declarator");
+        insertChild($$, $1);
+        insertChild($$, createNode("["));
+        insertChild($$, $3);
+        insertChild($$, createNode("*"));
+        insertChild($$, createNode("]"));
+    }
+    | direct_declarator LEFT_PAREN parameter_type_list RIGHT_PAREN{
+        $$=createNode("direct_declarator");
+        insertChild($$, $1);
+        insertChild($$, createNode("("));
+        insertChild($$, $3);
+        insertChild($$, createNode(")"));
+    }
+    | direct_declarator LEFT_PAREN identifier_list_opt RIGHT_PAREN{
+        $$=createNode("direct_declarator");
+        insertChild($$, $1);
+        insertChild($$, createNode("("));
+        insertChild($$, $3);
+        insertChild($$, createNode(")"));
+    }
 
 pointer:
-    '*' type_qualifier_list_opt
-    | '*' type_qualifier_list_opt pointer
+    STAR type_qualifier_list_opt {
+        $$=createNode("pointer");
+        insertChild($$, createNode("*"));
+        insertChild($$, $2);
+    }
+    | STAR type_qualifier_list_opt pointer{
+        $$=createNode("pointer");
+        insertChild($$, createNode("*"));
+        insertChild($$, $2);
+        insertChild($$, $3);
+    }
 ;
 
 type_qualifier_list:
-    type_qualifier
-    | type_qualifier_list type_qualifier
+    type_qualifier{
+        $$=createNode("type_qualifier_list");
+        insertChild($$, $1);
+    }
+    | type_qualifier_list type_qualifier{
+        $$=createNode("type_qualifier_list");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
 ;
 
 parameter_type_list:
-    parameter_list
-    | parameter_list ',' "..."
+    parameter_list{
+        $$=createNode("parameter_type_list");
+        insertChild($$, $1);
+    }
+    | parameter_list COMMA ELLIPSIS{
+        $$=createNode("parameter_type_list");
+        insertChild($$, $1);
+        insertChild($$, createNode(","));
+        insertChild($$, createNode("..."));
+    }
 ;
 
 parameter_list:
-    parameter_declaration
-    | parameter_list ',' parameter_declaration
+    parameter_declaration{
+        $$=createNode("parameter_list");
+        insertChild($$, $1);
+    }
+    | parameter_list ',' parameter_declaration{
+        $$=createNode("parameter_list");
+        insertChild($$, $1);
+        insertChild($$, createNode(","));
+        insertChild($$, $3);
+    }
 ;
 
 parameter_declaration:
-    declaration_specifiers declarator
-    | declaration_specifiers IDENTIFIER
+    declaration_specifiers declarator{
+        $$=createNode("parameter_declaration");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
+    | declaration_specifiers {
+        $$=createNode("parameter_declaration");
+        insertChild($$, $1);
+    }
 ;
 
 identifier_list:
-    IDENTIFIER
-    | identifier_list ',' IDENTIFIER
+    IDENTIFIER{
+        $$=createNode($1);
+    }
+    | identifier_list COMMA IDENTIFIER{
+        $$=createNode("identifier_list");
+        insertChild($$, $1);
+        insertChild($$, createNode(","));
+        insertChild($$, createNode($3));
+    }
 ;
 
 type_name:
-    specifier_qualifier_list
+    specifier_qualifier_list{
+        $$=createNode("type_name");
+        insertChild($$, $1);
+    }
 ;
 
 initializer:
-    assignment_expression
-    | LEFT_BRACE initializer_list RIGHT_BRACE
-    | LEFT_BRACE initializer_list ',' RIGHT_BRACE
+    assignment_expression{
+        $$=createNode("initializer");
+        insertChild($$, $1);
+    }
+    | LEFT_BRACE initializer_list RIGHT_BRACE{
+        $$=createNode("initializer");
+        insertChild($$, createNode("{"));
+        insertChild($$, $2);
+        insertChild($$, createNode("}"));
+    }
+    | LEFT_BRACE initializer_list COMMA RIGHT_BRACE{
+        $$=createNode("initializer");
+        insertChild($$, createNode("{"));
+        insertChild($$, $2);
+        insertChild($$, createNode(","));
+        insertChild($$, createNode("}"));
+    }
 ;
 
 initializer_list:
-    designation_opt initializer
-    | initializer_list ',' designation_opt initializer
+    designation_opt initializer{
+        $$=createNode("initializer_list");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
+    | initializer_list COMMA designation_opt initializer{
+        $$=createNode("initializer_list");
+        insertChild($$, $1);
+        insertChild($$, createNode(","));
+        insertChild($$, $3);
+    }
 ;
 
 designation:
-    designator_list '='
+    designator_list ASSIGN {
+        $$=createNode("designation");
+        insertChild($$, $1);
+        insertChild($$, createNode("="));
+    }
 ;
 
 designator_list:
-    designator
-    | designator_list designator
+    designator{
+        $$=createNode("designator_list");
+        insertChild($$, $1);
+    }
+    | designator_list designator{
+        $$=createNode("designator_list");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
 ;
 
 designator:
-    LEFT_BRACKET constant_expression RIGHT_BRACKET
-    | DOT IDENTIFIER
+    LEFT_BRACKET constant_expression RIGHT_BRACKET{
+        $$=createNode("designator");
+        insertChild($$, createNode("["));
+        insertChild($$, $2);
+        insertChild($$, createNode("]"));
+    }
+    | DOT IDENTIFIER{
+        $$=createNode("designator");
+        insertChild($$, createNode("."));
+        insertChild($$, createNode($2));
+    }
 ;
 
 // 3. Statements
 statement:
-    labeled_statement
-    | compound_statement
-    | expression_statement
-    | selection_statement
-    | iteration_statement
-    | jump_statement
+    labeled_statement{
+        $$=createNode("statement");
+        insertChild($$, $1);
+    }
+    | compound_statement{
+        $$=createNode("statement");
+        insertChild($$, $1);
+    }
+    | expression_statement{
+        $$=createNode("statement");
+        insertChild($$, $1);
+    }
+    | selection_statement{
+        $$=createNode("statement");
+        insertChild($$, $1);
+    }
+    | iteration_statement{
+        $$=createNode("statement");
+        insertChild($$, $1);
+    }
+    | jump_statement{   
+        $$=createNode("statement");
+        insertChild($$, $1);
+    }
 ;
 
 labeled_statement:
-    IDENTIFIER ':' statement
-    | CASE constant_expression ':' statement
-    | DEFAULT ':' statement
+    IDENTIFIER COLON statement{
+        $$=createNode("labeled_statement");
+        insertChild($$, createNode($1));
+        insertChild($$, createNode(":"));
+        insertChild($$, $3);
+    }
+    | CASE constant_expression COLON statement{
+        $$=createNode("labeled_statement");
+        insertChild($$, createNode("case"));
+        insertChild($$, $2);
+        insertChild($$, createNode(":"));
+        insertChild($$, $4);
+    }
+    | DEFAULT COLON statement{
+        $$=createNode("labeled_statement");
+        insertChild($$, createNode("default"));
+        insertChild($$, createNode(":"));
+        insertChild($$, $3);
+    }
 ;
 
 compound_statement:
-    LEFT_BRACE block_item_list_opt RIGHT_BRACE
+    LEFT_BRACE block_item_list_opt RIGHT_BRACE {
+        $$=createNode("compound_statement");
+        insertChild($$, createNode("{"));
+        insertChild($$, $2);
+        insertChild($$, createNode("}"));
+    }
 ;
 
 block_item_list:
-    block_item
-    | block_item_list block_item
+    block_item{
+        $$=createNode("block_item_list");
+    }
+    | block_item_list block_item{
+        $$=createNode("block_item_list");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
 ;
 
 block_item:
-    declaration
-    | statement
+    declaration{
+        $$=createNode("block_item");
+        insertChild($$, $1);
+    }
+    | statement{
+        $$=createNode("block_item");
+        insertChild($$, $1);
+    }
 ;
 
 expression_statement:
