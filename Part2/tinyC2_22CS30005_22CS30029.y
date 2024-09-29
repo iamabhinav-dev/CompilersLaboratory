@@ -2,9 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lib.h"
+#include "tinyC2_22CS30005_22CS30029.h"
+
 int yylex();
-void yyerror(char *s);
+void yyerror(const char *s);
 %}
 
 %code requires{
@@ -16,14 +17,14 @@ void yyerror(char *s);
 
 }
 %union {
-    char* string;
+    char* strVal;
     int integer;
     float floating;
     char character;
     struct Node* node;
 }
 
-%token <string> IDENTIFIER STRING_LITERAL CONSTANT
+%token <strVal> IDENTIFIER STRING_LITERAL CONSTANT
 
 %token AUTO ENUM RESTRICT UNSIGNED BREAK EXTERN RETURN VOID CASE
 %token FLOAT SHORT VOLATILE CHAR FOR SIGNED WHILE CONST GOTO SIZEOF BOOL
@@ -36,9 +37,9 @@ void yyerror(char *s);
 %token LOGICAL_AND LOGICAL_OR LOGICAL_NOT
 %token BITWISE_AND BITWISE_OR BITWISE_XOR BITWISE_NOT LEFT_SHIFT RIGHT_SHIFT
 %token ASSIGN PLUS_ASSIGN MINUS_ASSIGN STAR_ASSIGN DIVIDE_ASSIGN MODULO_ASSIGN BITWISE_AND_ASSIGN BITWISE_OR_ASSIGN BITWISE_XOR_ASSIGN LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN
-%token QUESTION_MARK COLON SEMICOLON COMMA DOT ARROW ELLIPSIS
+%token QUESTION_MARK COLON SEMICOLON COMMA DOT ARROW ELLIPSIS HASH
 
-%start start
+%start translation_unit
 
 %left PLUS MINUS STAR DIVIDE MODULO           
 %left LEFT_SHIFT RIGHT_SHIFT       
@@ -56,7 +57,7 @@ void yyerror(char *s);
 %nonassoc ELSE            
 %nonassoc QUESTION_MARK COLON 
 %right LOGICAL_NOT       
-
+%define parse.error verbose
 
 %type <node> primary_expression postfix_expression argument_expression_list_opt argument_expression_list unary_expression unary_operator cast_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression AND_expression exclusive_OR_expression inclusive_OR_expression logical_AND_expression logical_OR_expression conditional_expression assignment_expression assignment_operator expression constant_expression declaration declaration_specifiers init_declarator_list_opt init_declarator_list init_declarator storage_class_specifier type_specifier specifier_qualifier_list specifier_qualifier_list_opt type_qualifier function_specifier declarator direct_declarator pointer type_qualifier_list parameter_type_list parameter_list parameter_declaration identifier_list type_name initializer initializer_list designation designator_list designator statement labeled_statement compound_statement block_item_list block_item expression_statement selection_statement iteration_statement jump_statement translation_unit external_declaration function_definition declaration_list pointer_opt type_qualifier_list_opt assignment_expression_opt identifier_list_opt designation_opt block_item_list_opt expression_opt declaration_list_opt declaration_specifiers_opt
 
@@ -98,13 +99,13 @@ postfix_expression:
         $$=createNode("postfix_expression"); 
         insertChild($$, $1);
         insertChild($$, createNode("."));
-        insertChild($$, $3);
+        insertChild($$, createNode($3));
     }
     | postfix_expression ARROW IDENTIFIER{
         $$=createNode("postfix_expression"); 
         insertChild($$, $1);
         insertChild($$, createNode("->"));
-        insertChild($$, $3);
+        insertChild($$, createNode($3));
     }
     | postfix_expression INCREMENT{
         $$=createNode("postfix_expression"); 
@@ -139,10 +140,10 @@ postfix_expression:
 ;
 
 argument_expression_list_opt:
-    /* empty */ {$$=createNode('ε');}
+    /* empty */ {$$=createNode("ε");}
     | argument_expression_list {
         $$=createNode("argument_expression_list");
-        $$=insertChild($$, $1);
+        insertChild($$, $1);
         }
 
 
@@ -599,8 +600,7 @@ declarator:
 
 direct_declarator:
     IDENTIFIER{
-        $$=createNode("direct_declarator");
-        insertChild($$, $1);
+        $$=createNode($1);
     }
     | LEFT_PAREN declarator RIGHT_PAREN{
         $$=createNode("direct_declarator");
@@ -701,7 +701,7 @@ parameter_list:
         $$=createNode("parameter_list");
         insertChild($$, $1);
     }
-    | parameter_list ',' parameter_declaration{
+    | parameter_list COMMA parameter_declaration{
         $$=createNode("parameter_list");
         insertChild($$, $1);
         insertChild($$, createNode(","));
@@ -729,7 +729,7 @@ identifier_list:
         $$=createNode("identifier_list");
         insertChild($$, $1);
         insertChild($$, createNode(","));
-        insertChild($$, $3);
+        insertChild($$, createNode($3));
     }
 ;
 
@@ -804,7 +804,7 @@ designator:
     | DOT IDENTIFIER{
         $$=createNode("designator");
         insertChild($$, createNode("."));
-        insertChild($$, $2);
+        insertChild($$,createNode($2));
     }
 ;
 
@@ -839,7 +839,7 @@ statement:
 labeled_statement:
     IDENTIFIER COLON statement{
         $$=createNode("labeled_statement");
-        insertChild($$, $1);
+        insertChild($$, createNode($1));
         insertChild($$, createNode(":"));
         insertChild($$, $3);
     }
@@ -898,7 +898,7 @@ expression_statement:
 ;
 
 selection_statement:
-    IF LEFT_PAREN expression RIGHT_PAREN statement{
+    IF LEFT_PAREN expression RIGHT_PAREN statement %prec LOWER_THAN_ELSE{
         $$=createNode("selection_statement");
         insertChild($$,createNode("if"));
         insertChild($$,createNode("("));
@@ -971,10 +971,10 @@ iteration_statement:
 ;
 
 jump_statement
-    : GOTO ID SEMICOLON {
+    : GOTO IDENTIFIER SEMICOLON {
         $$ = createNode("jump_statement");
         insertChild($$, createNode("goto"));
-        insertChild($$, $2);
+        insertChild($$, createNode($2));
         insertChild($$, createNode(";"));
     }
     | CONTINUE SEMICOLON {
@@ -1000,23 +1000,19 @@ translation_unit:
     external_declaration{
         $$=createNode("translation_unit");
         insertChild($$,$1);
-        int* levels = (int*)malloc(sizeof(int));
-        levels[0] = 0;
-        printTree($$,levels,0);
+         printTree($$, 0, 1); 
     }
     | translation_unit external_declaration{
         $$=createNode("translation_unit");
         insertChild($$,$1);
         insertChild($$,($2));
-        int* levels = (int*)malloc(sizeof(int));
-        levels[0] = 0;
-        printTree($$,levels,0);
+        printTree($$, 0, 1); 
     }
 ;
 
 external_declaration:
     function_definition{
-        $$createNode("external_declaration");
+        $$=createNode("external_declaration");
         insertChild($$,$1);
     }
     | declaration{
@@ -1100,5 +1096,5 @@ declaration_specifiers_opt
 %%
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Parser error: %s\n", s);
+    fprintf(stderr, "Parser error:at line no %d %s token was %s\n", yylineno,s,yytext);
 }

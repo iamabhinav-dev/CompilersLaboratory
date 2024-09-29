@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "tinyC2_22CS30005_22CS30029.h"
 
 // Definition of a node in the tree
 struct Node {
@@ -29,7 +30,6 @@ void insertChild(struct Node* root, struct Node* childNode) {
         }
         temp->sibling = childNode;
     }
-    return root;
 }
 
 // Helper function to print the indentation
@@ -43,34 +43,41 @@ void printIndent(int levels[], int level) {
     }
 }
 
-// Function to print the tree in the specified format
-void printTree(struct Node* root, int* levels, int level) {
+// Function to print the tree with proper indentation
+void printTree(struct Node* root, int level, int isLast) {
     if (root == NULL) return;
 
-    // Skip printing if node data is 'E'
-    if (strcmp(root->data, "'E'") != 0) {
-        // Print the node with the appropriate indentation
-        printIndent(levels, level);
-        if (level > 0) {
-            printf("|-");
+    // Skip printing if node data is 'ε'
+    if (root->data == NULL || strcmp(root->data, "ε") != 0) {
+        // Print indentation based on level
+        for (int i = 0; i < level - 1; i++) {
+            printf("|   ");  // Print vertical line for previous levels
         }
+
+        // Print branch
+        if (level > 0) {
+            if (isLast) {
+                printf("└── ");  // Last child at this level
+            } else {
+                printf("├── ");  // Not the last child
+            }
+        }
+
+        // Print the current node's data
         printf("%s\n", root->data);
     }
 
-    // Recursively print children and siblings
+    // Recursively print the children of the current node
     struct Node* child = root->child;
-    if (child != NULL) {
-        levels[level] = 1; // There are more nodes at this level
-        while (child != NULL) {
-            struct Node* sibling = child->sibling;
-            levels = realloc(levels, (level + 2) * sizeof(int));  // Dynamically extend the levels array as needed
-            levels[level + 1] = (sibling != NULL); // Check if there are siblings at the next level
-            printTree(child, levels, level + 1);
-            child = sibling;
-        }
-        levels[level] = 0; // Reset after finishing this level
+    while (child != NULL) {
+        // Check if the current child is the last one
+        struct Node* sibling = child->sibling;
+        int isLastChild = (sibling == NULL);  // No more siblings
+        printTree(child, level + 1, isLastChild);  // Recur for child nodes
+        child = sibling;  // Move to the next sibling
     }
 }
+
 
 void freeTree(struct Node *node){
     if(node == NULL){

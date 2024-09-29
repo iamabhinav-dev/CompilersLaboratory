@@ -1,10 +1,15 @@
 %{
-    #include <stdio.h>
-    #include "y.tab.h"
+    #include "tinyC2_22CS30005_22CS30029.tab.h"
     #include <string.h>
 %}
 
 %option yylineno
+
+/* Comments */
+MULTISEQ    [^*]|[*][^/]
+MULTI_LINE  "/*"({MULTISEQ})*"/"
+SINGLE_LINE "//".*
+COMMENT {MULTI_LINE}|{SINGLE_LINE}
 
 /* Keyword Definition */
 KW   "auto"|"enum"|"restrict"|"unsigned"|"break"|"extern"|"return"|"void"|"case"|"float"|"short"|"volatile"|"char"|"for"|"signed"|"while"|"const"|"goto"|"sizeof"|"_Bool"|"continue"|"if"|"static"|"_Complex"|"default"|"inline"|"struct"|"_Imaginary"|"do"|"int"|"switch"|"double"|"long"|"typedef"|"else"|"register"|"union"
@@ -31,14 +36,10 @@ S_CHAR  [^"\\\n]|{ESCAPE_SEQ}
 S_CHAR_SEQ  {S_CHAR}+
 STRING_LIT  \"{S_CHAR_SEQ}?\"
 
+
 /* Punctuators */
 PUNC    "["|"]"|"("|")"|"{"|"}"|"."|"->"|"++"|"--"|"&"|"*"|"+"|"-"|"~"|"!"|"/"|"%"|"<<"|">>"|"<"|">"|"<="|">="|"=="|"!="|"^"|"|"|"&&"|"||"|"?"|":"|";"|"..."|"="|"*="|"/="|"%="|"+="|"-="|"<<="|">>="|"&="|"^="|"|="|","|"#"
 
-/* Comments */
-MULTISEQ    [^*]|[*][^/]
-MULTI_LINE  "/*"({MULTISEQ})*"/"
-SINGLE_LINE "//".*
-COMMENT {MULTI_LINE}|{SINGLE_LINE}
 
 %%
 
@@ -85,18 +86,18 @@ COMMENT {MULTI_LINE}|{SINGLE_LINE}
 }
 
 {ID}  { 
-    yylval.string = strdup(yytext);
+    yylval.strVal = strdup(yytext);
     return IDENTIFIER; 
 }
 
 
 {CONST} { 
-    yylval.string= strdup(yytext);
+    yylval.strVal= strdup(yytext);
     return CONSTANT; 
 }
 
 {STRING_LIT} { 
-    yylval.string = strdup(yytext);
+    yylval.strVal = strdup(yytext);
     return STRING_LITERAL; 
 }
 
@@ -163,6 +164,8 @@ COMMENT {MULTI_LINE}|{SINGLE_LINE}
     if (strcmp(yytext, "->") == 0) return ARROW;
     if (strcmp(yytext, "...") == 0) return ELLIPSIS;
 
+    if(strcmp(yytext, "#") == 0) return HASH;
+
 
 }
 
@@ -170,6 +173,11 @@ COMMENT {MULTI_LINE}|{SINGLE_LINE}
 
 [ \t\n]+    { /* Ignore whitespace */ }
 
-.           { printf("ERROR in Line %d : Invalid token %s\n", yylineno, yytext); return INVALID; }
+.           { printf("ERROR in Line %d : Invalid token %s\n", yylineno, yytext);  }
 
 %%
+
+
+int yywrap(void) {
+    return 1;
+}
