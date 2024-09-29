@@ -89,18 +89,9 @@ COMMENT {MULTI_LINE}|{SINGLE_LINE}
     return IDENTIFIER; 
 }
 
-{INT_CONST} { 
-    yylval.integer = atoi(yytext);
-    return CONSTANT; 
-}
 
-{FLOAT_CONST} { 
-    yylval.floating = atof(yytext);
-    return CONSTANT; 
-}
-
-{CHAR_CONST} { 
-    yylval.character= strdup(yytext);
+{CONST} { 
+    yylval.string= strdup(yytext);
     return CONSTANT; 
 }
 
