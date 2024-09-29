@@ -72,6 +72,7 @@ parameter_type_list type_qualifier_list_opt  type_qualifier_list pointer paramet
 parameter_declaration identifier_list  designation_opt designator_list
 designator statement labeled_statement compound_statement expression_statement selection_statement 
 iteration_statement jump_statement block_item_list_opt block_item_list block_item
+expression_opt
 
 
 primary_expression:
@@ -901,7 +902,11 @@ block_item:
 ;
 
 expression_statement:
-    expression_opt SEMICOLON
+    expression_opt SEMICOLON{
+        $$=createNode("expression_statement");
+        insertChild($$, $1);
+        insertChild($$, createNode(";"));
+    }
 ;
 
 selection_statement:
