@@ -1,5 +1,5 @@
 %{
-include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "lib.h"
@@ -63,8 +63,13 @@ type_name argument_expression_list_opt argument_expression_list unary_expression
 unary_operator cast_expression multiplicative_expression additive_expression
 shift_expression relational_expression equality_expression AND_expression
 exclusive_OR_expression inclusive_OR_expression logical_AND_expression 
-logical_OR_expression conditional_expression assignment_expression
-assignment_operator constant_expression declaration declaration_specifiers
+logical_OR_expression conditional_expression assignment_expression expression assignment_expression_opt
+assignment_operator constant_expression declaration declaration_specifiers declaration_specifiers_opt 
+storage_class_specifier type_specifier specifier_qualifier_list type_qualifier 
+function_specifier init_declarator_list init_declarator declarator initializer
+specifier_qualifier_list_opt pointer_opt direct_declarator identifier_list_opt
+parameter_type_list type_qualifier_list_opt  type_qualifier_list
+
 
 primary_expression:
     IDENTIFIER {$$=createNode($1);}
@@ -126,6 +131,7 @@ postfix_expression:
         insertChild($$, createNode(")"));
         insertChild($$, createNode("{"));
         insertChild($$, $5);
+        insertChild($$, createNode(","));
         insertChild($$, createNode("}"));
     }
     | LEFT_PAREN type_name RIGHT_PAREN LEFT_BRACE initializer_list COMMA RIGHT_BRACE{
@@ -144,7 +150,7 @@ argument_expression_list_opt:
     /* empty */ {$$=createNode('ε');}
     | argument_expression_list {
         $$=createNode("argument_expression_list");
-        insertChild($$, $1);
+        $$=insertChild($$, $1);
         }
 
 
@@ -370,97 +376,247 @@ exclusive_OR_expression:
 ;
 
 inclusive_OR_expression:
-    exclusive_OR_expression
-    | inclusive_OR_expression BITWISE_OR exclusive_OR_expression
+    exclusive_OR_expression{
+        $$=createNode("inclusive_OR_expression");
+        insertChild($$, $1);
+    }
+    | inclusive_OR_expression BITWISE_OR exclusive_OR_expression{
+        $$=createNode("inclusive_OR_expression");
+        insertChild($$, $1);
+        insertChild($$, createNode("|"));
+        insertChild($$, $3);
+    }
 ;
 
 logical_AND_expression:
-    inclusive_OR_expression
-    | logical_AND_expression LOGICAL_AND inclusive_OR_expression
+    inclusive_OR_expression{
+        $$=createNode("logical_AND_expression");
+        insertChild($$, $1);
+    }
+    | logical_AND_expression LOGICAL_AND inclusive_OR_expression{
+        $$=createNode("logical_AND_expression");
+        insertChild($$, $1);
+        insertChild($$, createNode("&&"));
+        insertChild($$, $3);
+    }
 ;
 
 logical_OR_expression:
-    logical_AND_expression
-    | logical_OR_expression LOGICAL_OR logical_AND_expression
+    logical_AND_expression{
+        $$=createNode("logical_OR_expression");
+        insertChild($$, $1);
+    }
+    | logical_OR_expression LOGICAL_OR logical_AND_expression{
+        $$=createNode("logical_OR_expression");
+        insertChild($$, $1);
+        insertChild($$, createNode("||"));
+        insertChild($$, $3);
+    }
 ;
 
 conditional_expression:
-    logical_OR_expression
-    | logical_OR_expression QUESTION_MARK expression COLON conditional_expression
+    logical_OR_expression{
+        $$=createNode("conditional_expression");
+        insertChild($$, $1);
+    }
+    | logical_OR_expression QUESTION_MARK expression COLON conditional_expression{
+        $$=createNode("conditional_expression");
+        insertChild($$, $1);
+        insertChild($$, createNode("?"));
+        insertChild($$, $3);
+        insertChild($$, createNode(":"));
+        insertChild($$, $5);
+    }
 ;
 
 assignment_expression:
-    conditional_expression
-    | unary_expression assignment_operator assignment_expression
+    conditional_expression{
+        $$=createNode("assignment_expression");
+        insertChild($$, $1);
+    }
+    | unary_expression assignment_operator assignment_expression{
+        $$=createNode("assignment_expression");
+        insertChild($$, $1);
+        insertChild($$, $2);
+        insertChild($$, $3);
+    }
 ;
 
 assignment_operator:
-    '=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '&=' | '^=' | '|='
+    ASSIGN {$$=createNode("=");}
+    | STAR_ASSIGN {$$=createNode("*=");}
+    | DIVIDE_ASSIGN {$$=createNode("/=");}
+    | MODULO_ASSIGN {$$=createNode("%=");}
+    | PLUS_ASSIGN {$$=createNode("+=");}
+    | MINUS_ASSIGN {$$=createNode("-=");}
+    | LEFT_SHIFT_ASSIGN {$$=createNode("<<=");}
+    | RIGHT_SHIFT_ASSIGN {$$=createNode(">>=");}
+    | BITWISE_AND_ASSIGN {$$=createNode("&=");}
+    | BITWISE_XOR_ASSIGN {$$=createNode("^=");}
+    | BITWISE_OR_ASSIGN{$$=createNode("|=");}
 ;
 
 expression:
-    assignment_expression
-    | expression ',' assignment_expression
+    assignment_expression{
+        $$=createNode("expression");
+        insertChild($$, $1);
+    }
+    | expression COMMA assignment_expression{
+        $$=createNode("expression");
+        insertChild($$, $1);
+        insertChild($$, createNode(","));
+        insertChild($$, $3);
+    }
 ;
 
 constant_expression:
-    conditional_expression
+    conditional_expression{
+        $$=createNode("constant_expression");
+        insertChild($$, $1);
+    }
 ;
 
 // 2. Declarations
 declaration:
-    declaration_specifiers init_declarator_list_opt SEMICOLON
+    declaration_specifiers init_declarator_list_opt SEMICOLON{
+        $$=createNode("declaration");
+        insertChild($$, $1);
+        insertChild($$, $2);
+        insertChild($$, createNode(";"));
+    }
 ;
 
 declaration_specifiers:
-    storage_class_specifier declaration_specifiers_opt
-    | type_specifier declaration_specifiers_opt
-    | type_qualifier declaration_specifiers_opt
-    | function_specifier declaration_specifiers_opt
+    storage_class_specifier declaration_specifiers_opt{
+        $$=createNode("declaration_specifiers");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
+    | type_specifier declaration_specifiers_opt{
+        $$=createNode("declaration_specifiers");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
+    | type_qualifier declaration_specifiers_opt{
+        $$=createNode("declaration_specifiers");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
+    | function_specifier declaration_specifiers_opt{
+        $$=createNode("declaration_specifiers");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
 ;
 
+init_declarator_list_opt
+    : init_declarator_list {
+        $$ = createNode("init_declarator_list");
+        insertChild($$, $1);
+    }
+    | {$$ = createNode("ε");}
+    ;
+
 init_declarator_list:
-    init_declarator
-    | init_declarator_list ',' init_declarator
+    init_declarator{
+        $$=createNode("init_declarator_list");
+        insertChild($$, $1);
+    }
+    | init_declarator_list COMMA init_declarator{
+        $$=createNode("init_declarator_list");
+        insertChild($$, $1);
+        insertChild($$, createNode(","));
+        insertChild($$, $3);
+    }
 ;
 
 init_declarator:
-    declarator
-    | declarator '=' initializer
+    declarator{
+        $$=createNode("init_declarator");
+        insertChild($$, $1);
+    }
+    | declarator ASSIGN initializer {
+        $$=createNode("init_declarator");
+        insertChild($$, $1);
+        insertChild($$, createNode("="));
+        insertChild($$, $3);
+    }
 ;
 
 storage_class_specifier:
-    AUTO | ENUM | RESTRICT | UNSIGNED | BREAK | EXTERN | RETURN | VOID
+    AUTO {$$=createNode("auto");}
+    | EXTERN {  $$=createNode("extern");}
+    | STATIC {  $$=createNode("static");}
+    | REGISTER{  $$=createNode("register");}
 ;
 
 type_specifier:
-    VOID | CHAR | SHORT | INT | LONG | FLOAT | DOUBLE | SIGNED | UNSIGNED | BOOL | COMPLEX | IMAGINARY
+    VOID {  $$=createNode("void");}
+    | CHAR {  $$=createNode("char");}
+    | SHORT {  $$=createNode("short");}
+    | INT {  $$=createNode("int");}
+    | LONG {  $$=createNode("long");}
+    | FLOAT {  $$=createNode("float");}
+    | DOUBLE {  $$=createNode("double");}
+    | SIGNED {  $$=createNode("signed");}
+    | UNSIGNED {  $$=createNode("unsigned");}
+    | BOOL {  $$=createNode("_Bool");}
+    | COMPLEX {  $$=createNode("_Complex");}
+    | IMAGINARY{  $$=createNode("_Imaginary");}
 ;
+
 
 specifier_qualifier_list:
-    type_specifier specifier_qualifier_list_opt
-    | type_qualifier specifier_qualifier_list_opt
+    type_specifier specifier_qualifier_list_opt{
+        $$=createNode("specifier_qualifier_list");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
+    | type_qualifier specifier_qualifier_list_opt{
+        $$=createNode("specifier_qualifier_list");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
 ;
 
+specifier_qualifier_list_opt
+    : specifier_qualifier_list {
+        $$ = createNode("specifier_qualifier_list");
+        insertChild($$, $1);
+    }
+    | {$$=createNode("ε");}
+    ;
+
 type_qualifier:
-    CONST | RESTRICT | VOLATILE
+    CONST {  $$=createNode("const");} 
+    | RESTRICT {  $$=createNode("restrict");}
+    | VOLATILE {  $$=createNode("volatile");}
 ;
 
 function_specifier:
-    INLINE
+    INLINE{  $$=createNode("inline");}
 ;
 
 declarator:
-    pointer_opt direct_declarator
+    pointer_opt direct_declarator{
+        $$=createNode("declarator");
+        insertChild($$, $1);
+        insertChild($$, $2);
+    }
 ;
 
 direct_declarator:
-    IDENTIFIER
+    IDENTIFIER{
+        $$=createNode("direct_declarator");
+        insertChild($$, createNode($1));
+    }
     | LEFT_PAREN declarator RIGHT_PAREN
     | direct_declarator LEFT_BRACKET type_qualifier_list_opt assignment_expression_opt RIGHT_BRACKET
+    | direct_declarator LEFT_BRACKET STATIC type_qualifier_list_opt assignment_expression RIGHT_BRACKET
+    | direct_declarator  LEFT_BRACKET type_qualifier_list STATIC assignment_expression RIGHT_BRACKET
+    | direct_declarator LEFT_BRACKET type_qualifier_list_opt STAR RIGHT_BRACKET
     | direct_declarator LEFT_PAREN parameter_type_list RIGHT_PAREN
     | direct_declarator LEFT_PAREN identifier_list_opt RIGHT_PAREN
-;
 
 pointer:
     '*' type_qualifier_list_opt
