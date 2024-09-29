@@ -39,7 +39,7 @@ run: $(EXE)
 
 # Clean target to remove generated files
 clean:
-	rm -f $(EXE) $(BISON_OUTPUT) $(LEX_OUTPUT) $(BISON_HEADER) 
+	rm -f $(EXE) $(BISON_OUTPUT) $(LEX_OUTPUT) $(BISON_HEADER) $(OUTPUT_FILE)
 
 # Phony targets
 .PHONY: all run clean
