@@ -58,22 +58,10 @@ void yyerror(char *s);
 %right LOGICAL_NOT       
 
 
-%type<node> primary_expression expression postfix_expression  primary_expression 
-type_name argument_expression_list_opt argument_expression_list unary_expression
-unary_operator cast_expression multiplicative_expression additive_expression
-shift_expression relational_expression equality_expression AND_expression
-exclusive_OR_expression inclusive_OR_expression logical_AND_expression 
-logical_OR_expression conditional_expression assignment_expression expression assignment_expression_opt
-assignment_operator constant_expression declaration declaration_specifiers declaration_specifiers_opt 
-storage_class_specifier type_specifier specifier_qualifier_list type_qualifier 
-function_specifier init_declarator_list init_declarator declarator initializer
-specifier_qualifier_list_opt pointer_opt direct_declarator identifier_list_opt
-parameter_type_list type_qualifier_list_opt  type_qualifier_list pointer parameter_list
-parameter_declaration identifier_list  designation_opt designator_list
-designator statement labeled_statement compound_statement expression_statement selection_statement 
-iteration_statement jump_statement block_item_list_opt block_item_list block_item
-expression_opt
+%type <node> primary_expression postfix_expression argument_expression_list_opt argument_expression_list unary_expression unary_operator cast_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression AND_expression exclusive_OR_expression inclusive_OR_expression logical_AND_expression logical_OR_expression conditional_expression assignment_expression assignment_operator expression constant_expression declaration declaration_specifiers init_declarator_list_opt init_declarator_list init_declarator storage_class_specifier type_specifier specifier_qualifier_list specifier_qualifier_list_opt type_qualifier function_specifier declarator direct_declarator pointer type_qualifier_list parameter_type_list parameter_list parameter_declaration identifier_list type_name initializer initializer_list designation designator_list designator statement labeled_statement compound_statement block_item_list block_item expression_statement selection_statement iteration_statement jump_statement translation_unit external_declaration function_definition declaration_list pointer_opt type_qualifier_list_opt assignment_expression_opt identifier_list_opt designation_opt block_item_list_opt expression_opt declaration_list_opt declaration_specifiers_opt
 
+
+%%
 
 primary_expression:
     IDENTIFIER {$$=createNode($1);}
@@ -110,13 +98,13 @@ postfix_expression:
         $$=createNode("postfix_expression"); 
         insertChild($$, $1);
         insertChild($$, createNode("."));
-        insertChild($$, createNode($3));
+        insertChild($$, $3);
     }
     | postfix_expression ARROW IDENTIFIER{
         $$=createNode("postfix_expression"); 
         insertChild($$, $1);
         insertChild($$, createNode("->"));
-        insertChild($$, createNode($3));
+        insertChild($$, $3);
     }
     | postfix_expression INCREMENT{
         $$=createNode("postfix_expression"); 
@@ -612,7 +600,7 @@ declarator:
 direct_declarator:
     IDENTIFIER{
         $$=createNode("direct_declarator");
-        insertChild($$, createNode($1));
+        insertChild($$, $1);
     }
     | LEFT_PAREN declarator RIGHT_PAREN{
         $$=createNode("direct_declarator");
@@ -741,7 +729,7 @@ identifier_list:
         $$=createNode("identifier_list");
         insertChild($$, $1);
         insertChild($$, createNode(","));
-        insertChild($$, createNode($3));
+        insertChild($$, $3);
     }
 ;
 
@@ -816,7 +804,7 @@ designator:
     | DOT IDENTIFIER{
         $$=createNode("designator");
         insertChild($$, createNode("."));
-        insertChild($$, createNode($2));
+        insertChild($$, $2);
     }
 ;
 
@@ -851,7 +839,7 @@ statement:
 labeled_statement:
     IDENTIFIER COLON statement{
         $$=createNode("labeled_statement");
-        insertChild($$, createNode($1));
+        insertChild($$, $1);
         insertChild($$, createNode(":"));
         insertChild($$, $3);
     }
@@ -910,43 +898,207 @@ expression_statement:
 ;
 
 selection_statement:
-    IF LEFT_PAREN expression RIGHT_PAREN statement
-    | IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement
-    | SWITCH LEFT_PAREN expression RIGHT_PAREN statement
+    IF LEFT_PAREN expression RIGHT_PAREN statement{
+        $$=createNode("selection_statement");
+        insertChild($$,createNode("if"));
+        insertChild($$,createNode("("));
+        insertChild($$,$3);
+        insertChild($$,createNode(")"));
+        insertChild($$,$5);
+    }
+    | IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement{
+        $$=createNode("selection_statement");
+        insertChild($$,createNode("if"));
+        insertChild($$,createNode("("));
+        insertChild($$,$3);
+        insertChild($$, createNode(")"));
+        insertChild($$, $5);
+        insertChild($$, createNode("else"));
+        insertChild($$, $7);
+    }
+    | SWITCH LEFT_PAREN expression RIGHT_PAREN statement{
+        $$ = createNode("selection_statement");
+        insertChild($$, createNode("switch"));
+        insertChild($$, createNode("("));
+        insertChild($$, $3);
+        insertChild($$, createNode(")"));
+        insertChild($$, $5);
+    }
 ;
 
 iteration_statement:
-    WHILE LEFT_PAREN expression RIGHT_PAREN statement
-    | DO statement WHILE LEFT_PAREN expression RIGHT_PAREN SEMICOLON
-    | FOR LEFT_PAREN expression_opt SEMICOLON expression_opt SEMICOLON expression_opt RIGHT_PAREN statement
-    | FOR LEFT_PAREN declaration expression_opt SEMICOLON expression_opt RIGHT_PAREN statement
+    WHILE LEFT_PAREN expression RIGHT_PAREN statement{
+        $$ = createNode("iteration_statement");
+        insertChild($$, createNode("while"));  
+        insertChild($$, createNode("("));
+        insertChild($$, $3);
+        insertChild($$, createNode(")"));
+        insertChild($$, $5);   
+    }
+    | DO statement WHILE LEFT_PAREN expression RIGHT_PAREN SEMICOLON{
+        $$ = createNode("iteration_statement");
+        insertChild($$, createNode("do"));
+        insertChild($$, $2);
+        insertChild($$, createNode("while"));
+        insertChild($$, createNode("("));
+        insertChild($$, $5);
+        insertChild($$, createNode(")"));
+        insertChild($$, createNode(";"));
+    }
+    | FOR LEFT_PAREN expression_opt SEMICOLON expression_opt SEMICOLON expression_opt RIGHT_PAREN statement{
+        $$ = createNode("iteration_statement");
+        insertChild($$, createNode("for"));
+        insertChild($$, createNode("("));
+        insertChild($$, $3);
+        insertChild($$, createNode(";"));
+        insertChild($$, $5);
+        insertChild($$, createNode(";"));
+        insertChild($$, $7);
+        insertChild($$, createNode(")"));
+        insertChild($$, $9);
+    }
+    | FOR LEFT_PAREN declaration expression_opt SEMICOLON expression_opt RIGHT_PAREN statement{
+        $$ = createNode("iteration_statement");
+        insertChild($$, createNode("for"));
+        insertChild($$, createNode("("));
+        insertChild($$, $3);
+        insertChild($$, $4);
+        insertChild($$, createNode(";"));
+        insertChild($$, $6);
+        insertChild($$, createNode(")"));
+        insertChild($$, $8);
+    }
 ;
 
-jump_statement:
-    GOTO IDENTIFIER SEMICOLON
-    | CONTINUE SEMICOLON
-    | BREAK SEMICOLON
-    | RETURN expression_opt SEMICOLON
-;
+jump_statement
+    : GOTO ID SEMICOLON {
+        $$ = createNode("jump_statement");
+        insertChild($$, createNode("goto"));
+        insertChild($$, $2);
+        insertChild($$, createNode(";"));
+    }
+    | CONTINUE SEMICOLON {
+        $$ = createNode("jump_statement");
+        insertChild($$, createNode("continue"));
+        insertChild($$, createNode(";"));
+    }
+    | BREAK SEMICOLON {
+        $$ = createNode("jump_statement");
+        insertChild($$, createNode("break"));
+        insertChild($$, createNode(";"));
+    }
+    | RETURN expression_opt SEMICOLON {
+        $$ = createNode("jump_statement");
+        insertChild($$, createNode("return"));
+        insertChild($$, $2);
+        insertChild($$, createNode(";"));
+    }
+    ;
 
 // 4. External definitions
 translation_unit:
-    external_declaration
-    | translation_unit external_declaration
+    external_declaration{
+        $$=createNode("translation_unit");
+        insertChild($$,$1);
+        int* levels = (int*)malloc(sizeof(int));
+        levels[0] = 0;
+        printTree($$,levels,0);
+    }
+    | translation_unit external_declaration{
+        $$=createNode("translation_unit");
+        insertChild($$,$1);
+        insertChild($$,($2));
+        int* levels = (int*)malloc(sizeof(int));
+        levels[0] = 0;
+        printTree($$,levels,0);
+    }
 ;
 
 external_declaration:
-    function_definition
-    | declaration
+    function_definition{
+        $$createNode("external_declaration");
+        insertChild($$,$1);
+    }
+    | declaration{
+        $$=createNode("external_declaration");
+        insertChild($$,$1);
+    }
 ;
 
 function_definition:
-    declaration_specifiers declarator declaration_list_opt compound_statement
+    declaration_specifiers declarator declaration_list_opt compound_statement{
+        $$=createNode("function_definition");
+        insertChild($$,$1);
+        insertChild($$,$2);
+        insertChild($$,$3);
+        insertChild($$,$4);
+    }
 ;
 
 declaration_list:
-    declaration
-    | declaration_list declaration
+    declaration{
+        $$=createNode("declaration_list");
+        insertChild($$,$1);
+    }
+    | declaration_list declaration{
+        $$=createNode("declaration_list");
+        insertChild($$,$1);
+        insertChild($$,$2);
+    }
 ;
 
+pointer_opt:
+    pointer{$$=createNode("pointer");
+    insertChild($$,$1);}
+    |{$$=createNode("ε");}
+;
+
+type_qualifier_list_opt:
+    type_qualifier_list{$$=createNode("type_qualifier_list");
+    insertChild($$,$1);}
+    |{$$=createNode("ε");}
+    ;
+
+assignment_expression_opt
+    : assignment_expression {$$ = createNode("assignment_expression");insertChild($$, $1);}
+    | {$$=createNode("ε");}
+    ;
+
+identifier_list_opt
+    : identifier_list {$$ = createNode("identifier_list");insertChild($$, $1);}
+    | {$$=createNode("ε");}
+    ;
+
+designation_opt
+    : designation {$$ = createNode("designation");insertChild($$, $1);}
+    | {$$=createNode("ε");}
+    ;
+
+block_item_list_opt
+    : block_item_list{$$ = createNode("block_item_list");insertChild($$, $1);}
+    | {$$=createNode("ε");}
+    ;
+
+expression_opt
+    : expression {$$ = createNode("expression");insertChild($$, $1);}
+    | {$$=createNode("ε");}
+    ;
+
+declaration_list_opt
+    : declaration_list{$$ = createNode("declaration_list");insertChild($$, $1);}
+    | {$$=createNode("ε");}
+    ;
+
+declaration_specifiers_opt
+    : declaration_specifiers{$$ = createNode("declaration_specifiers");
+    insertChild($$, $1);
+    }
+    | {$$=createNode("ε");}
+    ;
+
+
 %%
+
+void yyerror(const char *s) {
+    fprintf(stderr, "Parser error: %s\n", s);
+}

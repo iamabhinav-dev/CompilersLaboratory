@@ -19,7 +19,7 @@ struct Node* createNode(char data[]) {
 }
 
 // Function to insert a child node
-struct Node* insertChild(struct Node* root, struct Node* childNode) {
+void insertChild(struct Node* root, struct Node* childNode) {
     if (root->child == NULL) {
         root->child = childNode;
     } else {
